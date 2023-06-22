@@ -7,51 +7,52 @@ def corte_rapido_tramontina(pasta_entrada, pasta_saida, nota_de_corte):
     caminho_saida = os.path.join(pasta_saida, "trimm")
     os.makedirs(caminho_saida, exist_ok=True)
 
-    # Obter a lista de arquivos com a extensão .ab1 na pasta de entrada
+    # Verifica e cria uma lista com todos os arquivos com extensão .ab1 presentes na pasta
     arquivo_ab1 = [file for file in os.listdir(pasta_entrada) if file.endswith(".ab1")]
 
-    # Criar uma lista para armazenar os nomes dos arquivos .ab1
+    # Cria uma lista para armazenar os nomes dos arquivos .ab1
     nomes = []
 
     for file in arquivo_ab1:
-        # Obter o caminho completo para o arquivo de entrada
+        # Fixa o caminho da pasta
         arquivo_entrada = os.path.join(pasta_entrada, file)
 
-        # Criar o nome do arquivo de saída
+        # Fixa o nome do arquivo de saída
         arquivo_saida = os.path.join(caminho_saida, f"{os.path.splitext(file)[0]}_trim.fasta")
 
-        # Abrir o arquivo de entrada no formato .ab1
+        # Faz o seqIO abrir o arquivo
         sequencia_ab1 = SeqIO.parse(arquivo_entrada, "abi")
 
-        # Lista para armazenar as sequências cortadas
+        # armazena as sequências cortadas
         sequencias_cortadas = []
 
         for sequence in sequencia_ab1:
-            # Obter a qualidade de cada base na sequência
+            # Fixa a qualidade de cada base na sequência baseado no numero descrito mais abaixo
             base_qualities = sequence.letter_annotations["phred_quality"]
 
-            # Encontrar o índice da base inicial com qualidade acima do limiar
+            # Encontra o início da seuencia de base com qualidade acima da nota de corte
             inicio_sequencia = next(i for i, qual in enumerate(base_qualities) if qual >= nota_de_corte)
 
-            # Encontrar o índice da base final com qualidade acima do limiar
+            # Encontra a ultima base final com qualidade acima da nota de corte
             end_index = next(i for i, qual in enumerate(base_qualities[::-1]) if qual >= nota_de_corte)
             end_index = len(sequence) - end_index
 
-            # Cortar a sequência com base nos índices encontrados
+            # copia a sequência com base no inicio e final verificado anteriormente
             trimmed_sequence = sequence[inicio_sequencia:end_index]
 
-            # Adicionar a sequência cortada à lista
+            # Adiciona a sequência cortada à lista
             sequencias_cortadas.append(trimmed_sequence)
 
-        # Salvar as sequências cortadas no arquivo de saída
+        # Salva as sequências cortadas no arquivo de saída
         SeqIO.write(sequencias_cortadas, arquivo_saida, "fasta")
 
-        # Adicionar o nome do arquivo .ab1 à lista
+        # Adiciona o nome do arquivo .ab1 à lista
         nomes.append(file)
-
+        
+    # Aviso no terminal
     print("Pontas com qualidade ruim foram cortadas com sucesso!")
 
-    # Criar a planilha CSV na pasta "trimm"
+    # Cria a planilha CSV na pasta "trimm"
     csv_file = os.path.join(caminho_saida, "nomes.csv")
     with open(csv_file, mode='w', newline='') as file:
         writer = csv.writer(file)
